@@ -1,14 +1,14 @@
 (ns scratch.demo-factories)
 
-(ns lambdaisland.facai.demo-factories
-  (:require [lambdaisland.facai :as facai]
-            [lambdaisland.facai.kernel :as fk]
-            [lambdaisland.facai.helpers :as zh]))
+(ns lambdaisland.harvest.demo-factories
+  (:require [lambdaisland.harvest :as harvest]
+            [lambdaisland.harvest.kernel :as hk]
+            [lambdaisland.harvest.helpers :as zh]))
 
-(facai/defactory ::user
+(harvest/defactory ::user
   {:user/name "John Doe"
-   :user/handle (facai/sequence #(str "john" %))
-   :user/email (facai/with [:user/handle]
+   :user/handle (harvest/sequence #(str "john" %))
+   :user/email (harvest/with [:user/handle]
                          (fn [handle]
                            (str handle "@doe.com")))
    :user/roles #{}}
@@ -17,12 +17,12 @@
   {:admin
    {:user/roles #{:admin}}})
 
-(facai/defactory ::member
+(harvest/defactory ::member
   :inherit ::user
   {:membership_expires #(zh/days-from-now 100)})
 
-(facai/defactory ::article
-  {:author (facai/ref :facai/user)
+(harvest/defactory ::article
+  {:author (harvest/ref :harvest/user)
    :title "7 Tip-top Things To Try"}
   :traits
   {:published {:status "published"}
@@ -34,38 +34,38 @@
 
 
 (comment
-  (facai/build ::user)
-  (facai/build ::user {:user/handle "timmy"})
-  (facai/build ::user {} {:traits [:admin]})
-  (facai/build ::article {} {::facai/traits [:published :in-the-future]})
+  (harvest/build ::user)
+  (harvest/build ::user {:user/handle "timmy"})
+  (harvest/build ::user {} {:traits [:admin]})
+  (harvest/build ::article {} {::harvest/traits [:published :in-the-future]})
 
-  (facai/build ::article
+  (harvest/build ::article
              {[::article :> :title] ""
-              ::facai/traits [:published :in-the-future]
+              ::harvest/traits [:published :in-the-future]
               [:author :user/handle] "timmy"
-              [:author ::facai/traits] [:admin]})
+              [:author ::harvest/traits] [:admin]})
 
-  (fk/build {:registry @facai/registry
+  (hk/build {:registry @harvest/registry
              :hooks [{:ref (fn [result qry ctx]
                              (prn :ref qry '-> result)
                              result)
                       :map (fn [result qry ctx]
                              (prn :map qry '-> result)
                              result)}]}
-            (facai/ref :facai/article))
+            (harvest/ref :harvest/article))
 
-  (facai/build {:john :facai/user
-              :mick :facai/admin}
+  (harvest/build {:john :harvest/user
+              :mick :harvest/admin}
              {[:john :user/handle] "johny"
               [:mick :user/handle] "micky"})
 
-  (facai/build (vec (repeat 5 :facai/user))
+  (harvest/build (vec (repeat 5 :harvest/user))
              {[:> 0 :user/handle] "foo"})
 
-  (facai/build-all :facai/article
+  (harvest/build-all :harvest/article
                  {}
                  {:hooks [{:map-entry (fn [result query _]
-                                        (if (fk/ref? (val query))
+                                        (if (hk/ref? (val query))
                                           (update-in result [:value (key query)]  :id)
                                           result)
                                         )

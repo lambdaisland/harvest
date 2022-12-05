@@ -1,8 +1,8 @@
-(ns lambdaisland.facai.jdbc-test
+(ns lambdaisland.harvest.jdbc-test
   (:require [clojure.string :as str]
             [clojure.test :refer :all]
-            [lambdaisland.facai :as f]
-            [lambdaisland.facai.next-jdbc :as fnj]
+            [lambdaisland.harvest :as h]
+            [lambdaisland.harvest.next-jdbc :as fnj]
             [next.jdbc :as nj]
             [next.jdbc.quoted :as quoted]))
 
@@ -18,17 +18,17 @@
        ")"))
 
 
-(f/defactory user
+(h/defactory user
   {:name "Arne"})
 
-(f/defactory post
+(h/defactory post
   {:title "POST TITLE"
    :author (user {:with {:name "Tobi"}})})
 
-(f/defactory article
+(h/defactory article
   {:title "ARTICLE TITLE"
    :author user}
-  :facai.jdbc/table "posts")
+  :harvest.jdbc/table "posts")
 
 (def table-defs [{:table "users"
                   :columns {"id" "INT AUTO_INCREMENT PRIMARY KEY"
@@ -48,8 +48,8 @@
       (is (= {:id 1
               :title "POST TITLE"
               :author-id 1}
-             (:facai.result/value result)))
+             (:harvest.result/value result)))
 
-      (is (= '{[lambdaisland.facai.jdbc-test/post :author lambdaisland.facai.jdbc-test/user] {:name "Tobi", :id 1}
-               [lambdaisland.facai.jdbc-test/post] {:title "POST TITLE", :id 1, :author-id 1}}
-             (:facai.result/linked result))))))
+      (is (= '{[lambdaisland.harvest.jdbc-test/post :author lambdaisland.harvest.jdbc-test/user] {:name "Tobi", :id 1}
+               [lambdaisland.harvest.jdbc-test/post] {:title "POST TITLE", :id 1, :author-id 1}}
+             (:harvest.result/linked result))))))

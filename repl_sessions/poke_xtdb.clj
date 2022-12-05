@@ -1,8 +1,8 @@
 (ns repl-sessions.poke-xtdb
   (:require [xtdb.api :as xt]
-            [lambdaisland.facai :as f]
+            [lambdaisland.harvest :as h]
             [lambdaisland.faker :refer [fake]]
-            [lambdaisland.facai.kernel :as fk]))
+            [lambdaisland.harvest.kernel :as hk]))
 
 (def node (xt/start-node {}))
 
@@ -29,12 +29,12 @@
 
 ;; We'll have institutions (colleges or universities):
 
-(f/defactory institution
+(h/defactory institution
   {:institution/name #(fake [:educator :university])})
 
 ;; And students:
 
-(f/defactory student
+(h/defactory student
   {:student/name #(fake [:name :name])
    :student/date-of-birth date-of-birth})
 
@@ -42,7 +42,7 @@
 ;; specific institution. Note how we simply reference the institution factory
 ;; here.
 
-(f/defactory course
+(h/defactory course
   {:course/name #(fake [:educator :course-name])
    :course/start-time #(fake [:time :date-time])
    :course/end-time #(fake [:time :date-time])
@@ -50,15 +50,15 @@
 
 ;; Finally we allow students to enroll in courses.
 
-(f/defactory enrollment
+(h/defactory enrollment
   {:enrollment/student student
    :enrollment/course course})
 
 
-(let [{:facai.result/keys [value linked]}
-      (fk/build nil enrollment {:after-build-factory
+(let [{:harvest.result/keys [value linked]}
+      (hk/build nil enrollment {:after-build-factory
                                 (fn [ctx]
-                                  (update ctx :facai.result/value
+                                  (update ctx :harvest.result/value
                                           (fn [v]
                                             (update-vals
                                              (assoc v :xt/id (random-uuid))

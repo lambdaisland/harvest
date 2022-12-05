@@ -1,10 +1,10 @@
-# facai
+# harvest
 
 <!-- badges -->
-[![cljdoc badge](https://cljdoc.org/badge/com.lambdaisland/facai)](https://cljdoc.org/d/com.lambdaisland/facai) [![Clojars Project](https://img.shields.io/clojars/v/com.lambdaisland/facai.svg)](https://clojars.org/com.lambdaisland/facai)
+[![cljdoc badge](https://cljdoc.org/badge/com.lambdaisland/harvest)](https://cljdoc.org/d/com.lambdaisland/harvest) [![Clojars Project](https://img.shields.io/clojars/v/com.lambdaisland/harvest.svg)](https://clojars.org/com.lambdaisland/harvest)
 <!-- /badges -->
 
-Factories for fun and profit! Gongxi facai!
+Factories for fun and profit! Gongxi harvest!
 
 ## Getting Started
 
@@ -52,7 +52,7 @@ deserves a larger payoff. The same shape of data you need for your tests can
 serve you well when testing UI, or when documenting internal APIs in repl
 sessions or notebooks.
 
-So this is what Facai factories are about. A standardized way to define
+So this is what Harvest factories are about. A standardized way to define
 "factories" for the various types of information that flow through your app. It
 has a bit of smarts, it knows about associations between different types of
 entities, and can integrate with the database (be it relational or datalog), to
@@ -66,28 +66,28 @@ looks like.
   "When starting out simply create a single `factories` namespace, you can split
   it up later if it gets too big.
 
-  I'll alias `lambdaisland.facai` to `f` for brevity, you can alias to `facai`
+  I'll alias `lambdaisland.harvest` to `f` for brevity, you can alias to `harvest`
   if you prefer to be a bit more explicit.
   "
-  (:require [lambdaisland.facai :as f]))
+  (:require [lambdaisland.harvest :as h]))
 
 ;; Let's define our first factory. You pass it a template of what your data
 ;; looks like. In this case we simply put a literal map.
-(f/defactory user
+(h/defactory user
   {:user/name   "Lilliam Predovic"
    :user/handle "lilli42"
    :user/email  "lilli42@example.com"})
 
 ;; We can generate data from this template by calling `f/build-val`
 
-(f/build-val user)
+(h/build-val user)
 ;; => #:user{:name "Lilliam Predovic",
 ;;           :handle "lilli42",
 ;;           :email "lilli42@example.com"}
 
 ;; To override additional values you can pass a map to the factory:
 
-(f/build-val (user {:user/name "Mellissa Schimmel"}))
+(h/build-val (user {:user/name "Mellissa Schimmel"}))
 ;; => #:user{:name "Mellissa Schimmel",
 ;;           :handle "lilli42",
 ;;           :email "lilli42@example.com"}
@@ -95,12 +95,12 @@ looks like.
 ;; Functions in the template will be called, and the result in turn is treated
 ;; as a factory template.
 
-(f/defactory user
+(h/defactory user
   {:user/name   "Lilliam Predovic"
    :user/handle "lilli42"
    :user/email  #(str "lilli" (rand-int 100) "@example.com")})
 
-(f/build-val user)
+(h/build-val user)
 ;; => #:user{:name "Lilliam Predovic",
 ;;           :handle "lilli42",
 ;;           :email "lilli92@example.com"}
@@ -109,9 +109,9 @@ looks like.
 ;; more dynamic and random. Maybe you want all usernames to be unique, the
 ;; numbered helper can help with that.
 
-(require '[lambdaisland.facai.helpers :as fh])
+(require '[lambdaisland.harvest.helpers :as fh])
 
-(f/defactory user
+(h/defactory user
   {:user/name   "Lilliam Predovic"
    :user/handle (fh/numbered #(str "lilli" %))
    :user/email  #(str "lilli" (rand-int 100) "@example.com")})
@@ -121,14 +121,14 @@ looks like.
 
 (require '[lambdaisland.faker :refer [fake]])
 
-(f/defactory user
+(h/defactory user
   {:user/name   #(fake [:name :name])
    :user/handle #(fake [:internet :username])
    :user/email  #(fake [:internet :email])})
 
 ;; Factories can have traits, which are merged into the main template on demand.
 
-(f/defactory article
+(h/defactory article
   {:article/title "7 Tip-top Things To Try"
    :article/status :draft}
 
@@ -138,7 +138,7 @@ looks like.
    :in-the-future {:with {:article/published-at #(fh/days-from-now 2)}}
    :in-the-past {:with {:article/published-at #(fh/days-ago 2)}}})
 
-(f/build-val article {:traits [:published :in-the-future]})
+(h/build-val article {:traits [:published :in-the-future]})
 ;; => #:article{:title "7 Tip-top Things To Try",
 ;;              :status "published",
 ;;              :published-at
@@ -147,12 +147,12 @@ looks like.
 ;; If you have associations between data, then you simply use the factory as the value.
 ;; Or if you want to set some specifics with `:with` or `:traits` you can call the factories.
 
-(f/defactory article
+(h/defactory article
   {:article/title "7 Tip-top Things To Try"
    :article/submitter user
    :article/author (user {:with {:user/roles #{"author"}}})})
 
-(f/build-val article)
+(h/build-val article)
 ;; => #:article{:title "7 Tip-top Things To Try",
 ;;              :submitter
 ;;              #:user{:name "Mr. Reinaldo Hartmann",
@@ -169,7 +169,7 @@ looks like.
 ;; will only get expanded when building the `article`, so you get a different
 ;; username each time.
 
-(f/build-val article)
+(h/build-val article)
 ;; => #:article{:title "7 Tip-top Things To Try",
 ;;              :submitter
 ;;              #:user{:name "Hobert Fadel",
@@ -185,11 +185,11 @@ looks like.
 ;; Factories can inherit from other factories. Often it's preferrable to use
 ;; traits, but this can be a useful feature.
 
-(f/defactory blog-post
+(h/defactory blog-post
   :inherit article
   {:post/uri-slug "/post"})
 
-(f/build-val blog-post)
+(h/build-val blog-post)
 ;; => {:article/title "7 Tip-top Things To Try",
 ;;     :article/submitter
 ;;     #:user{:name "Rima Wintheiser",
@@ -214,16 +214,16 @@ This provides a concise way to specify overrides, either when creating
 factories, or when building values.
 
 ```clj
-(f/defactory article
+(h/defactory article
  {:article/submitter (user {:user/name "Mr. submit"})})
  
 ;; or
 
-(f/build-val article {:with {:article/submitter {:user/name "Mr. submit"}}})
+(h/build-val article {:with {:article/submitter {:user/name "Mr. submit"}}})
 
 ;; or
 
-(f/build-val (article {:article/submitter {:user/name "Mr. submit"}}))
+(h/build-val (article {:article/submitter {:user/name "Mr. submit"}}))
 ```
 
 The syntax works as follows. `f/build-val` takes two arguments, a factory or
@@ -236,7 +236,7 @@ When passing a single map instead of keyword args this is equivalent to using
 `:with`.
 
 ```clj
-(f/build-val user {:with {:user/name "jill"}})
+(h/build-val user {:with {:user/name "jill"}})
 ;; equals
 (user :with {:user/name "jill"}
 ;; equals
@@ -249,7 +249,7 @@ while still allowing us to distinguish explicit options like `:rules` and
 
 ## Paths, Selectors, Rules, and Unification
 
-During the build process Facai keeps track of the "path" it is currently at.
+During the build process Harvest keeps track of the "path" it is currently at.
 When it handles a map entry the map key is added to the path. When it handles a
 nested factory then the factory id (a fully qualified symbol) is added onto the
 path. When handling other collections the sequential index is added to the path.
@@ -288,18 +288,18 @@ These paths can be matched with selectors, these function conceptually a lot lik
 
 ### Selecting Associations
 
-When creating an `(article)` Facai also created two users, one of them the
+When creating an `(article)` Harvest also created two users, one of them the
 author, and one of them the submitter. You can use selectors to conveniently
-pull out these associated entities. For this you use `facai/build`, which
-returns a map with `:facai.result/value` (in this case the author), as well as
-`:facai.result/linked`, a map with any "linked" entities. With this result map
+pull out these associated entities. For this you use `harvest/build`, which
+returns a map with `:harvest.result/value` (in this case the author), as well as
+`:harvest.result/linked`, a map with any "linked" entities. With this result map
 in hand you can select linked values.
 
 ```clj
-(let [result    (f/build article)
-      submitter (f/sel1 result :article/submitter)
-      author    (f/sel1 result :article/author)]
-  {:article   (f/value result)
+(let [result    (h/build article)
+      submitter (h/sel1 result :article/submitter)
+      author    (h/sel1 result :article/author)]
+  {:article   (h/value result)
    :submitter submitter
    :author    author})
 ```
@@ -310,8 +310,8 @@ of linked entities, and then you just reference the ones you need.
 We could also get all users:
 
 ```clj
-(let [result (f/build article)]
-  (f/sel result user))
+(let [result (h/build article)]
+  (h/sel result user))
 ```
 
 ### Rules
@@ -336,27 +336,27 @@ provides a convenient way to set deeply nested values. Rules are provided as a m
 
 ### Unification
 
-As a rule value you can pass the special value `(f/unify)`. The first time such
+As a rule value you can pass the special value `(h/unify)`. The first time such
 a rule matches, it will generate factory data as usual, any subsequent matches
 will then reuse that data. This has some really useful applications. Say we have
 a data model where many types of entities have a link back to an `organization`.
 
 ```clj
-(f/defactory user
+(h/defactory user
   {:username "jonny"
    :org organization})
 
-(f/defactory department
+(h/defactory department
   {:name "sales"
    :org organization
    :head user})
 
-(f/defactory meeting-room
+(h/defactory meeting-room
   {:org organization
    :room-number "123"
    :department department})
 
-(f/defactory booking
+(h/defactory booking
   {:start-time #(java.util.Date.)
    :booked-by user
    :room meeting-room})
@@ -367,13 +367,13 @@ organizations. That doesn't really make sense, bookings are only made within a
 single organization. We can unify these as follows:
 
 ```clj
-(booking {:rules {organization (f/unify)}})
+(booking {:rules {organization (h/unify)}})
 ```
 
-You can pass a value to `(f/unify)` to unify across multiple rules:
+You can pass a value to `(h/unify)` to unify across multiple rules:
 
 ```clj
-(booking {:rules {:org-id (f/unify :org) :organization-id (f/unify :org)}})
+(booking {:rules {:org-id (h/unify :org) :organization-id (h/unify :org)}})
 ```
 
 All rules that have the same unify value will end up linking to the same value.
@@ -382,36 +382,36 @@ All rules that have the same unify value will end up linking to the same value.
 
 Factories can contain an `after-build` hook, this is function which gets called
 after we've constructed a value for that factory. It gets passed a "context"
-map, which contains among other things the `:facai.result/value`. A common use
+map, which contains among other things the `:harvest.result/value`. A common use
 case is to update this value. You can use the `f/update-result` helper for that,
-which is a shorthand for `(update ctx :facai.result/value ...)`
+which is a shorthand for `(update ctx :harvest.result/value ...)`
 
 ```clj
-(f/defactory product
+(h/defactory product
   {:sku "123"
    :price 12.99})
 
-(f/defactory product-line-item
+(h/defactory product-line-item
   {:product product
    :quantity 1}
 
   :after-build
   (fn [ctx]
-    (f/update-result
+    (h/update-result
      ctx
      (fn [{:as res :keys [product quantity]}]
        (assoc res :total (* (:price product) quantity))))))
 
-(f/build-val product-line-item);; => {:product {:sku "123", :price 12.99}, :quantity 1, :total 12.99}
-(f/build-val product-line-item {:with {:quantity 2}});; => {:product {:sku "123", :price 12.99}, :quantity 2, :total 25.98}
-(f/build-val product-line-item {:rules {:price 69 :quantity 2}});; => {:product {:sku "123", :price 69}, :quantity 2, :total 138}
+(h/build-val product-line-item);; => {:product {:sku "123", :price 12.99}, :quantity 1, :total 12.99}
+(h/build-val product-line-item {:with {:quantity 2}});; => {:product {:sku "123", :price 12.99}, :quantity 2, :total 25.98}
+(h/build-val product-line-item {:rules {:price 69 :quantity 2}});; => {:product {:sku "123", :price 69}, :quantity 2, :total 138}
 ```
 
 Notice how the result always has the right total price.
 
 ## Database Integration
 
-One of the big selling points of Facai is that it makes it trivial to create
+One of the big selling points of Harvest is that it makes it trivial to create
 test data and insert it into the database in one go. This can dramatically clean
 up test setup. Currently we ship initial support for next-jdbc, and for Datomic
 peer. These integrations will indubitably have to be improved, but they provide
@@ -425,13 +425,13 @@ specific configuration regarding the conventions of how you map Clojure data to
 tables.
 
 Factories themselves can take some options as well, like setting an explici
-`facai.next-jdbc/table-name`, if the name can't be inferred from the factory
+`harvest.next-jdbc/table-name`, if the name can't be inferred from the factory
 name.
 
 ```clojure
 (in-ns 'my-app.factories)
 (require '[clojure.string :as str]
-         '[lambdaisland.facai.next-jdbc :as fnj]
+         '[lambdaisland.harvest.next-jdbc :as fnj]
          '[next.jdbc :as nj]
          '[next.jdbc.quoted :as quoted])
 
@@ -455,33 +455,33 @@ name.
               "author_id" "INT"
               "created_at" "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"}}])
 
-(f/defactory user
+(h/defactory user
   {:name #(fake [:name :name])})
 
-(f/defactory post
+(h/defactory post
   {:title #(fake [:dc-comics :title])
    :author user})
 
-(f/defactory article
+(h/defactory article
   {:title "Article"
    :author user}
-  :facai.jdbc/table "posts")
+  :harvest.jdbc/table "posts")
 
 
 (def ds (nj/get-datasource (str "jdbc:h2:/tmp/h2-db-" (rand-int 1e8))))
 (run! #(nj/execute! ds [(create-table-sql %)]) table-defs)
 (def create!
   (fnj/create-fn
-   {:facai.next-jdbc/ds ds
-    :facai.next-jdbc/fk-col-fn #(keyword (str (name %) "-id"))}))
+   {:harvest.next-jdbc/ds ds
+    :harvest.next-jdbc/fk-col-fn #(keyword (str (name %) "-id"))}))
 
-(:facai.result/value (create! post))
+(:harvest.result/value (create! post))
 ;; => {:title "Gotham Central",
 ;;     :author-id 2,
 ;;     :id 2,
 ;;     :created-at #inst "2022-03-28T10:44:05.447624000-00:00"}
 
-;; So what happened here? Facai generated a user, persisted it to the database,
+;; So what happened here? Harvest generated a user, persisted it to the database,
 ;; the database assigned a unique id, and we then used that for the association
 ;; when generating the article. The database also generated the value for
 ;; created-at.
@@ -490,21 +490,21 @@ name.
 ;; linked entities.
 
 (create! post)
-;; => {:facai.result/value
+;; => {:harvest.result/value
 ;;     {:title "Crisis On Infinite Earths",
 ;;      :author-id 3,
 ;;      :id 3,
 ;;      :created-at #inst "2022-03-28T10:45:03.367515000-00:00"},
-;;     :facai.result/linked
+;;     :harvest.result/linked
 ;;     {[my-app.factories/post :author] {:name "Richard Quigley", :id 3}},
-;;     :facai.factory/id my-app.factories/post}
+;;     :harvest.factory/id my-app.factories/post}
 
 ;; These are in a map with the keys being the "path". This includes map keys
 ;; whenever we recurse into a map, and it includes the names of factories. When
 ;; recursing into a sequential collection the indexes are added to the path.
 
 (create! (repeat 3 post))
-;; => #:facai.result{:value (6 5 4),
+;; => #:harvest.result{:value (6 5 4),
 ;;                   :linked
 ;;                   {[0 my-app.factories/post :author]
 ;;                    {:name "Ettie Weissnat DDS", :id 4},
@@ -534,13 +534,13 @@ name.
 ;; Say we want to create three posts in the database, and then care about the
 ;; authors of the posts.
 
-(f/sel (create! (repeat 3 post)) [:author])
+(h/sel (create! (repeat 3 post)) [:author])
 ;; => ({:name "The Hon. Bradley Leuschke", :id 7}
 ;;     {:name "Violet Koelpin", :id 8}
 ;;     {:name "Annita Hauck", :id 9})
 
 (let [res (create! (repeat 3 post))
-      first-author (f/sel1 res [0 :author])]
+      first-author (h/sel1 res [0 :author])]
   first-author)
 ;; => {:name "Fr. Denisha Wyman", :id 28}
 ```
@@ -552,18 +552,18 @@ connection and a factory/template. It will handle tempids.
 
 ```clojure
 (require '[datomic.api :as d]
-         '[lambdaisland.facai :as f]
-         '[lambdaisland.facai.datomic :as fd])
+         '[lambdaisland.harvest :as h]
+         '[lambdaisland.harvest.datomic :as fd])
 
 (d/create-database "datomic:mem://foo")
 (def conn (d/connect "datomic:mem://foo"))
 
-(f/defactory line-item
+(h/defactory line-item
   {:line-item/description "Widgets"
    :line-item/quantity 5
    :line-item/price 1.0})
 
-(f/defactory cart
+(h/defactory cart
   {:cart/created-at #(java.util.Date.)
    :cart/line-items [line-item line-item]})
 
@@ -590,11 +590,11 @@ connection and a factory/template. It will handle tempids.
   @(d/transact conn schema)
   (fd/create! conn cart))
 
-;; => {:facai.result/value
+;; => {:harvest.result/value
 ;;     {:cart/created-at #inst "2022-03-28T11:02:19.667-00:00",
 ;;      :cart/line-items [17592186045419 17592186045420],
 ;;      :db/id 17592186045418},
-;;     :facai.result/linked
+;;     :harvest.result/linked
 ;;     {[user/cart :cart/line-items 0]
 ;;      {:line-item/description "Widgets",
 ;;       :line-item/quantity 5,
@@ -605,7 +605,7 @@ connection and a factory/template. It will handle tempids.
 ;;       :line-item/quantity 5,
 ;;       :line-item/price 1.0,
 ;;       :db/id 17592186045420}},
-;;     :facai.factory/id user/cart,
+;;     :harvest.factory/id user/cart,
 ;;     :db-after datomic.db.Db@9e510866}
 
 ```
@@ -719,7 +719,7 @@ Note that this is not a replacement but rather a complement to test.check-style 
 
 &nbsp;
 
-facai is part of a growing collection of quality Clojure libraries created and maintained
+harvest is part of a growing collection of quality Clojure libraries created and maintained
 by the fine folks at [Gaiwan](https://gaiwan.co).
 
 Pay it forward by [becoming a backer on our Open Collective](http://opencollective.com/lambda-island),
@@ -735,7 +735,7 @@ You can find an overview of our projects at [lambdaisland/open-source](https://g
 <!-- contributing -->
 ## Contributing
 
-Everyone has a right to submit patches to facai, and thus become a contributor.
+Everyone has a right to submit patches to harvest, and thus become a contributor.
 
 Contributors MUST
 

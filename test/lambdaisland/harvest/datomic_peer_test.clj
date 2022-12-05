@@ -1,9 +1,9 @@
-(ns lambdaisland.facai.datomic-peer-test
+(ns lambdaisland.harvest.datomic-peer-test
   (:require [clojure.test :refer :all]
             [datomic.api :as d]
-            [lambdaisland.facai :as f]
-            [lambdaisland.facai.datomic-peer :as fd]
-            [lambdaisland.facai.kernel :as fk]))
+            [lambdaisland.harvest :as h]
+            [lambdaisland.harvest.datomic-peer :as fd]
+            [lambdaisland.harvest.kernel :as hk]))
 
 (defn s [sname type & {:as opts}]
   (merge
@@ -12,12 +12,12 @@
     :db/cardinality :db.cardinality/one}
    opts))
 
-(f/defactory line-item
+(h/defactory line-item
   {:line-item/description "Widgets"
    :line-item/quantity 5
    :line-item/price 1.0})
 
-(f/defactory cart
+(h/defactory cart
   {:cart/created-at #(java.util.Date.)
    :cart/line-items [line-item line-item]})
 
@@ -43,7 +43,7 @@
               d/create-database)
         conn (d/connect url)]
     @(d/transact conn schema)
-    (let [{:facai.result/keys [linked value]
+    (let [{:harvest.result/keys [linked value]
            ::fd/keys [db-after]
            :as res} (fd/create! conn cart)]
       (is (= #{:cart/created-at :cart/line-items :db/id}

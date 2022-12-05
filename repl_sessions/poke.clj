@@ -1,6 +1,6 @@
 (ns repl-sessions.poke
-  (:require [lambdaisland.facai :as f]
-            [lambdaisland.facai.kernel :as fk]
+  (:require [lambdaisland.harvest :as h]
+            [lambdaisland.harvest.kernel :as hk]
             [clojure.string :as str]))
 
 (def short-words
@@ -12,32 +12,32 @@
                   (shuffle (concat (map str/upper-case short-words)
                                    short-words)))))
 
-(f/defactory cycle
+(h/defactory cycle
   {:type :cycle
    :id rand-id})
 
-(f/defactory user
+(h/defactory user
   {:type :user
    :id rand-id
    :name "Finn"})
 
-(f/defactory organization
+(h/defactory organization
   {:type :organization
    :id rand-id})
 
-(f/defactory organization-user
+(h/defactory organization-user
   {:type :organization-user
    :id rand-id
    :organization-id organization
    :user-id user})
 
-(f/defactory property
+(h/defactory property
   {:type :property
    :id rand-id
    :org-id organization
    :created-by user})
 
-(f/defactory property-cycle-user
+(h/defactory property-cycle-user
   {:type :property-cycle-user
    :id rand-id
    :cycle-id cycle
@@ -52,66 +52,66 @@
           [:org-id] (->LVar :org)
           [:organization-id] (->LVar :org)}})
 
-(f/sel
- (f/build property-cycle-user)
+(h/sel
+ (h/build property-cycle-user)
  [:created-by])
 
-(f/sel
- (f/build property-cycle-user)
+(h/sel
+ (h/build property-cycle-user)
  [#{:user-id :created-by}])
 
-(f/sel
- (f/build property-cycle-user)
+(h/sel
+ (h/build property-cycle-user)
  [user])
 (keys
- (:facai.result/linked
-  (f/build property-cycle-user)))
+ (:harvest.result/linked
+  (h/build property-cycle-user)))
 
-(f/build property-cycle-user
+(h/build property-cycle-user
          {:rules {[user :name] cycle
                   [property] user}})
 
-(some #(when (fk/path-match? '[repl-sessions.poke/property-cycle-user :user-id repl-sessions.poke/user :name] (key %)) (val %)) {[user :name] "Jake"
+(some #(when (hk/path-match? '[repl-sessions.poke/property-cycle-user :user-id repl-sessions.poke/user :name] (key %)) (val %)) {[user :name] "Jake"
                                                                                                                                  [property] {:foo "bar"}})
 
 
 (def kk2
   (keys
-   (:facai.result/linked
-    (f/build property-cycle-user
-             #_{:rules {[user] (fk/->LVar :x)}}))))
+   (:harvest.result/linked
+    (h/build property-cycle-user
+             #_{:rules {[user] (hk/->LVar :x)}}))))
 
 (count kk2)
 
 (remove (set kk) kk2)
 
-(f/build-val [property-cycle-user
+(h/build-val [property-cycle-user
               organization-user]
-             {:rules {[#{:org-id :organization-id}] (fk/->LVar :x)}})
+             {:rules {[#{:org-id :organization-id}] (hk/->LVar :x)}})
 
 
-(f/build-val [property-cycle-user
+(h/build-val [property-cycle-user
               organization-user]
-             {:rules {[organization] (fk/->LVar :x)}})
+             {:rules {[organization] (hk/->LVar :x)}})
 
 
-(fk/path-match? `[0 repl-sessions.poke/property-cycle-user :property-id repl-sessions.poke/property :org-id repl-sessions.poke/organization]
+(hk/path-match? `[0 repl-sessions.poke/property-cycle-user :property-id repl-sessions.poke/property :org-id repl-sessions.poke/organization]
                 [#{:org-id :organization-id}])
 
-(f/defactory a
+(h/defactory a
   {:a #(rand-int 100)})
 
-(f/defactory b
+(h/defactory b
   {:a1 a
    :a2 a
    :b "b"})
 
-(f/defactory c
+(h/defactory c
   {:b1 b
    :b2 b
    :c "c"})
 
-(keys (:facai.result/linked (f/build c {:rules {a (f/unify)}})))
+(keys (:harvest.result/linked (h/build c {:rules {a (h/unify)}})))
 ([repl-sessions.poke/c :b1 repl-sessions.poke/b :a1 repl-sessions.poke/a]
  [repl-sessions.poke/c :b1 repl-sessions.poke/b :a2 repl-sessions.poke/a]
  [repl-sessions.poke/c :b1 repl-sessions.poke/b]

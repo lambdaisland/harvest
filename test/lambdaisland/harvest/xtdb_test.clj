@@ -1,14 +1,14 @@
-(ns lambdaisland.facai.xtdb-test
+(ns lambdaisland.harvest.xtdb-test
   (:require [clojure.test :refer :all]
-            [lambdaisland.facai :as f]
-            [lambdaisland.facai.kernel :as fk]
-            [lambdaisland.facai.xtdb :as fxt]
+            [lambdaisland.harvest :as h]
+            [lambdaisland.harvest.kernel :as hk]
+            [lambdaisland.harvest.xtdb :as fxt]
             [xtdb.api :as xt]))
 
-(f/defactory institution
+(h/defactory institution
   {:institution/name "Ghent University"})
 
-(f/defactory course
+(h/defactory course
   {:course/name "Formele Logica I"
    :course/institution institution})
 
@@ -32,16 +32,16 @@
     (is (= {:course/name "Formele Logica I"
             :course/institution :entity1
             :xt/id :entity2}
-           (:facai.result/value result)))
+           (:harvest.result/value result)))
 
-    (is (= '{[lambdaisland.facai.xtdb-test/course
+    (is (= '{[lambdaisland.harvest.xtdb-test/course
               :course/institution
-              lambdaisland.facai.xtdb-test/institution]
+              lambdaisland.harvest.xtdb-test/institution]
              {:institution/name "Ghent University"
               :xt/id :entity1}
 
-             [lambdaisland.facai.xtdb-test/course]
+             [lambdaisland.harvest.xtdb-test/course]
              {:course/name "Formele Logica I"
               :course/institution :entity1
               :xt/id :entity2}}
-           (:facai.result/linked result)))))
+           (:harvest.result/linked result)))))

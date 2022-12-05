@@ -6,7 +6,7 @@
   [registry {:keys [ref opts]}]
   (let [ref-traits (:traits opts)
         ref-with (:with opts)
-        {:facai.factory/keys [definition inherit traits]} (doto (get registry ref) assert)]
+        {:harvest.factory/keys [definition inherit traits]} (doto (get registry ref) assert)]
     (cond->
         (reduce
          (fn [fact trait]

@@ -1,27 +1,27 @@
 (ns notebooks.walkthrough
-  (:require [lambdaisland.facai :as f]
+  (:require [lambdaisland.harvest :as h]
             [lambdaisland.faker :as faker :refer [fake]]
-            [lambdaisland.facai.xtdb :as facai-xt]
+            [lambdaisland.harvest.xtdb :as harvest-xt]
             [xtdb.api :as xt]))
 
 ;; # 🧧 Factories for Fun and Profit. 恭喜發財
 
-;; Facai (rhymes with "high") is a factory library for Clojure and ClojureScript,
+;; Harvest (rhymes with "high") is a factory library for Clojure and ClojureScript,
 ;; inspired by the likes of Factory Bot (Ruby) and Ex Machina (Elixir), but with
 ;; some unique features that set it apart. In this walkthrough we'll build up your
 ;; understanding from bottom to top.
 
-;; The main entry point when using Facai is the [[lambdaisland.facai/build]]
+;; The main entry point when using Harvest is the [[lambdaisland.harvest/build]]
 ;; function. Build takes a _template_ or _factory_, and optionally a map of
 ;; options.
 
-(f/build ["hello"])
+(h/build ["hello"])
 
 ;; `build` returns a "result map", contained a _value_, and a map of _linked
 ;; entities_, which in this case is empty. We'll ignore linked entities for now,
 ;; and instead use the `build-val` function, which returns the value directly.
 
-(f/build-val ["hello"])
+(h/build-val ["hello"])
 
 ;; The argument passed to `build`/`build-val` is a _template_. Any value is a
 ;; valid template, when a template gets built, the following rules are applied.
@@ -31,7 +31,7 @@
 ;; - Clojure collections are traversed and built recursively
 ;; - other values are preserved as-is
 
-(f/build-val {:number (partial rand-int 100)})
+(h/build-val {:number (partial rand-int 100)})
 
 ;; ## 🏭 Factories
 
@@ -45,23 +45,23 @@
 ;; to find the appropriate fakers for your use case.
 
 (def user
-  ^{:type :facai/factory}
-  {:facai.factory/id `user
-   :facai.factory/template
+  ^{:type :harvest/factory}
+  {:harvest.factory/id `user
+   :harvest.factory/template
    {:user/id random-uuid
     :user/email #(fake [:internet :email])}})
 
-(f/build-val user)
+(h/build-val user)
 
-;; Factories must have a `:type :facai/factory` metadata, and a fully qualified
-;; `:facai.factory/id`. We recommend using the `defactory` convenience macro to set
+;; Factories must have a `:type :harvest/factory` metadata, and a fully qualified
+;; `:harvest.factory/id`. We recommend using the `defactory` convenience macro to set
 ;; up your factories.
 
-(f/defactory user2
+(h/defactory user2
   {:user/id random-uuid
    :user/email #(fake [:internet :email])})
 
-(f/build-val user2)
+(h/build-val user2)
 
 ;; When you use `defactory` it also becomes possible to treat your factories as functions, calling them does the same thing as passing them to `build-val`.
 
@@ -81,12 +81,12 @@
 
 ;; We'll have institutions (colleges or universities):
 
-(f/defactory institution
+(h/defactory institution
   {:institution/name #(fake [:educator :university])})
 
 ;; And students:
 
-(f/defactory student
+(h/defactory student
   {:student/name #(fake [:name :name])
    :student/date-of-birth date-of-birth})
 
@@ -94,7 +94,7 @@
 ;; specific institution. Note how we simply reference the institution factory
 ;; here.
 
-(f/defactory course
+(h/defactory course
   {:course/name #(fake [:educator :course-name])
    :course/start-time #(fake [:time :date-time])
    :course/end-time #(fake [:time :date-time])
@@ -102,7 +102,7 @@
 
 ;; Finally we allow students to enroll in courses.
 
-(f/defactory enrollment
+(h/defactory enrollment
   {:enrollment/student student
    :enrollment/course course})
 
@@ -115,12 +115,12 @@
 ;; can be done with fairly little straightforward Clojure code. Now let's look
 ;; at what actually sets these factories apart.
 
-;; There are two sets of features that make Facai a valuable tool, one is
+;; There are two sets of features that make Harvest a valuable tool, one is
 ;; database support, the other is allowing fine-grained declarative mechanisms
 ;; for generating specific shapes of data.
 
 ;; Factories are typically used in combination with a database, so you can easily
-;; insert some fixture data, which you can then leverage in your tests. Facai
+;; insert some fixture data, which you can then leverage in your tests. Harvest
 ;; currently has support for XTDB, Datomic Peer (Free or Pro), and relational
 ;; databases through next.jdbc.
 
@@ -149,11 +149,11 @@
 ^{:nextjournal.clerk/viewer nextjournal.clerk.viewer/hide-result}
 (def node (xt/start-node {}))
 
-;; Now we can use Facai to populate it with data:
+;; Now we can use Harvest to populate it with data:
 
-(def result (facai-xt/create! node enrollment))
+(def result (harvest-xt/create! node enrollment))
 
-;; This returns a Facai result map, just like `f/build`, but notice how the
+;; This returns a Harvest result map, just like `f/build`, but notice how the
 ;; values now have a `:xt/id`. For each database we support there is a separate
 ;; `create!` function which takes an implementatation-specific reference to the
 ;; database and a factory/template. Any entities will be inserted, and if the
@@ -161,18 +161,18 @@
 ;; instance if you have an auto-increment key in a relational database, then
 ;; you'll see the assigned numbers in your result.
 
-;; Facai has some helpers to find specific entities in the result. This uses
+;; Harvest has some helpers to find specific entities in the result. This uses
 ;; selectors which we'll discuss later. For now what you need to know is that
 ;; the factory itself functions as a selector that finds all entities built by
 ;; that factory.
 
-(f/sel result course)
-(f/sel result student)
+(h/sel result course)
+(h/sel result student)
 
 ;; Notice how this enrollment is no longer a nested map, but a flat structure
 ;; with UUID references, since that's how this structure gets represented in the
 ;; database.
 
-(f/sel result enrollment)
+(h/sel result enrollment)
 
 ;; ## Traits

@@ -1,5 +1,5 @@
-(ns lambdaisland.facai.kernel-test
-  (:require [lambdaisland.facai.kernel :as fk]
+(ns lambdaisland.harvest.kernel-test
+  (:require [lambdaisland.harvest.kernel :as hk]
             [clojure.test :refer :all]))
 
 (def profile-factory
@@ -9,15 +9,15 @@
 
 (def article-factory
   {:title "the article title"
-   :profile (fk/ref ::profile)})
+   :profile (hk/ref ::profile)})
 
 (def registry
-  {:uuid {:facai.factory/name :uuid
-          :facai.factory/definition random-uuid}
-   ::profile {:facai.factory/name ::profile
-              :facai.factory/definition profile-factory}
-   ::article {:facai.factory/name ::article
-              :facai.factory/definition article-factory}})
+  {:uuid {:harvest.factory/name :uuid
+          :harvest.factory/definition random-uuid}
+   ::profile {:harvest.factory/name ::profile
+              :harvest.factory/definition profile-factory}
+   ::article {:harvest.factory/name ::article
+              :harvest.factory/definition article-factory}})
 
 (def uuid-hooks
   {:map (fn [res qry ctx]
@@ -28,22 +28,22 @@
             (assoc-in res [:value (:ref qry)] id)))})
 
 (deftest atomic-values-test
-  (is (= {:value :foo :ctx {}} (fk/build {} :foo)))
-  (is (= {:value 123 :ctx {}} (fk/build {} 123)))
-  (is (= {:value "foo" :ctx {}} (fk/build {} "foo")))
-  (is (= {:value #inst "2022-03-18" :ctx {}} (fk/build {} #inst "2022-03-18"))))
+  (is (= {:value :foo :ctx {}} (hk/build {} :foo)))
+  (is (= {:value 123 :ctx {}} (hk/build {} 123)))
+  (is (= {:value "foo" :ctx {}} (hk/build {} "foo")))
+  (is (= {:value #inst "2022-03-18" :ctx {}} (hk/build {} #inst "2022-03-18"))))
 
 (deftest basic-registry-test
   (is (= "Arne Brasseur"
          (:value
-          (fk/build {:registry {:name {:facai.factory/definition #(str "Arne" " " "Brasseur")}}}
-                    (fk/ref :name))))))
+          (hk/build {:registry {:name {:harvest.factory/definition #(str "Arne" " " "Brasseur")}}}
+                    (hk/ref :name))))))
 
 (deftest map-test
   (is (= {:name "Arne Brasseur" :age 39}
-         (:value (fk/build {:registry {::name {:facai.factory/definition #(str "Arne" " " "Brasseur")}}}
-                           {:name (fk/ref ::name)
+         (:value (hk/build {:registry {::name {:harvest.factory/definition #(str "Arne" " " "Brasseur")}}}
+                           {:name (hk/ref ::name)
                             :age 39})))))
 
-(fk/build {:registry registry}
-          (fk/ref ::article))
+(hk/build {:registry registry}
+          (hk/ref ::article))

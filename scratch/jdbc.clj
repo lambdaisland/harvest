@@ -1,9 +1,9 @@
 (ns scratch.jdbc)
 
-(ns lambdaisland.facai.jdbc
+(ns lambdaisland.harvest.jdbc
   (:require [clojure.string :as str]
-            [lambdaisland.facai :as facai]
-            [lambdaisland.facai.kernel :as fk])
+            [lambdaisland.harvest :as harvest]
+            [lambdaisland.harvest.kernel :as hk])
   (:import (java.sql DriverManager Statement)))
 
 (defn get-connection [url]
@@ -53,11 +53,11 @@
    (create! conn factory rules nil))
   ([conn factory rules opts]
    (let [{:keys [value] :as res}
-         (fk/build (merge
-                    {:registry @facai/registry
+         (hk/build (merge
+                    {:registry @harvest/registry
                      :rules rules
                      :hooks [{:map-entry (fn [result query ctx]
-                                           (if (fk/ref? (val query))
+                                           (if (hk/ref? (val query))
                                              (update result (key query) :id)
                                              result))
                               :map (fn [result query ctx]
@@ -67,7 +67,7 @@
                                        result))
                               }]}
                     opts)
-                   (facai/refify @facai/registry factory))]
+                   (harvest/refify @harvest/registry factory))]
      (with-meta value res))))
 
 (comment
@@ -87,7 +87,7 @@
                "profile_id" "INT"}}
     ])
 
-  (fk/build {:registry fk/registry
+  (hk/build {:registry hk/registry
              :hooks [{:finalize-entity (fn [m {:keys [path] ::keys [conn]}]
                                          (if (seq path)
                                            (update m :value #(insert! conn (name (first path)) %))
@@ -95,4 +95,4 @@
                       :handle-association (fn [acc k v value]
                                             (assoc-in acc [:value (str (name k) "_id")] (:id value)))}]
              ::conn conn}
-            (fk/ref ::fk/article)))
+            (hk/ref ::hk/article)))

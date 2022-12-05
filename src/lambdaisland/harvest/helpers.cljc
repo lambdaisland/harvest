@@ -1,4 +1,4 @@
-(ns lambdaisland.facai.helpers)
+(ns lambdaisland.harvest.helpers)
 
 (defn days-ago
   "Get a timestamp that is `n` days in the past. Returns a ZonedDateTime on Clojure

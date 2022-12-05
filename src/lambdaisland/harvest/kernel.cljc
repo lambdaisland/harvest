@@ -1,8 +1,8 @@
-(ns lambdaisland.facai.kernel
-  "Heart of the Facai factory logic
+(ns lambdaisland.harvest.kernel
+  "Heart of the Harvest factory logic
 
   This is strictly a Mechanism namespace: generic, unopinionated, verbose.
-  See [[lambdaisland.facai]] for an interface meant for human consumption."
+  See [[lambdaisland.harvest]] for an interface meant for human consumption."
   (:refer-clojure :exclude [ref])
   (:require [lambdaisland.data-printers :as data-printers]))
 
@@ -15,14 +15,14 @@
   (->DeferredBuild thunk opts))
 
 (defn factory? [o]
-  (= :facai/factory (:type (meta o))))
+  (= :harvest/factory (:type (meta o))))
 
 (defn unwrap [{:keys [thunk]}]
   (cond
     (var? thunk)
     @thunk
     (factory? thunk)
-    (if-let [resolve (:facai.factory/resolve thunk)]
+    (if-let [resolve (:harvest.factory/resolve thunk)]
       (resolve)
       thunk)
     :else
@@ -39,9 +39,9 @@
 (defn factory-id [f]
   (cond
     (factory? f)
-    (:facai.factory/id f)
+    (:harvest.factory/id f)
     (deferred-build? f)
-    (:facai.factory/id (unwrap f))))
+    (:harvest.factory/id (unwrap f))))
 
 (defn match1? [p s]
   (or (= s p)
@@ -88,15 +88,15 @@
           (recur ps (cons s ss) (inc i)))))))
 
 (defn match-rules [ctx]
-  (some #(when (path-match? (:facai.build/path ctx) (key %))
+  (some #(when (path-match? (:harvest.build/path ctx) (key %))
            (let [v (val %)]
              (if (lvar? v)
-               (@(:facai.build/!lvars ctx) v v)
+               (@(:harvest.build/!lvars ctx) v v)
                v)))
-        (:facai.build/rules ctx)))
+        (:harvest.build/rules ctx)))
 
 (defn factory-template
-  [{:facai.factory/keys [template inherit traits]}
+  [{:harvest.factory/keys [template inherit traits]}
    {:as opts with :with selected-traits :traits}]
   (cond->
       (reduce
@@ -111,19 +111,19 @@
 
 (defn push-path [ctx segment]
   (assert segment)
-  (update ctx :facai.build/path (fnil conj []) segment))
+  (update ctx :harvest.build/path (fnil conj []) segment))
 
 (defn add-linked
-  "Add a new entry to the `:facai.result/linked` map. If there is already an entry
+  "Add a new entry to the `:harvest.result/linked` map. If there is already an entry
   for the given path then this is a no-op, this allows persistence
   implemenentation to do their own custom linked handling in a hook."
   [result path entity]
-  (if (get-in result [:facai.result/linked path])
+  (if (get-in result [:harvest.result/linked path])
     result
-    (update result :facai.result/linked (fnil assoc {}) path entity)))
+    (update result :harvest.result/linked (fnil assoc {}) path entity)))
 
 (defn merge-linked [result linked]
-  (update result :facai.result/linked merge linked))
+  (update result :harvest.result/linked merge linked))
 
 (defn handle-hook
   ([ctx hook]
@@ -141,25 +141,25 @@
   "Handle building a factory, which means building its template, possibly adjusted
   for traits, and doing some contextual bookkeeping so we can keep track of the
   path within the build process."
-  [{:facai.build/keys [path] :as ctx} factory opts]
-  (let [{:facai.factory/keys [id]} factory
+  [{:harvest.build/keys [path] :as ctx} factory opts]
+  (let [{:harvest.factory/keys [id]} factory
         result (-> ctx
                    (build-template (factory-template factory opts) opts)
-                   (assoc :facai.factory/id id))]
+                   (assoc :harvest.factory/id id))]
     (if path
-      (assoc result :facai.build/path (:facai.build/path ctx))
+      (assoc result :harvest.build/path (:harvest.build/path ctx))
       result)))
 
 (defn build-factory
   [{:as ctx}
-   {:as factory, traits :facai.factory/traits}
+   {:as factory, traits :harvest.factory/traits}
    {:as opts, selected-traits :traits}]
   (-> (let [;; for hooks, like input, but guaranteed to be unwrapped
-            ctx (assoc ctx :facai.build/factory factory)
-            {:as ctx} (handle-hook ctx :facai.hooks/before-build-factory)
+            ctx (assoc ctx :harvest.build/factory factory)
+            {:as ctx} (handle-hook ctx :harvest.hooks/before-build-factory)
             {:as   ctx
-             path  :facai.build/path
-             value :facai.result/value} (-> ctx
+             path  :harvest.build/path
+             value :harvest.result/value} (-> ctx
                                             (build-factory* factory opts))
             ctx (if (and traits selected-traits)
                   (reduce
@@ -170,26 +170,26 @@
                    ctx
                    selected-traits)
                   ctx)
-            ctx (if-let [hook (:facai.factory/after-build factory)]
+            ctx (if-let [hook (:harvest.factory/after-build factory)]
                   (hook ctx)
                   ctx)
-            ctx (handle-hook ctx :facai.hooks/after-build-factory)]
-        (cond-> ctx path (add-linked path (:facai.result/value ctx))))))
+            ctx (handle-hook ctx :harvest.hooks/after-build-factory)]
+        (cond-> ctx path (add-linked path (:harvest.result/value ctx))))))
 
 (defn build-map-entry
   "Handle a single entry of a map-shaped template (see [[build-template]]),
   handles recursing into building the value, and associng the built value into
   the result."
   [{:as ctx} val-acc k v opts]
-  (let [{:as ctx path :facai.build/path} (push-path ctx k)
-        {:facai.result/keys [value linked] :as result} (build ctx v nil)]
+  (let [{:as ctx path :harvest.build/path} (push-path ctx k)
+        {:harvest.result/keys [value linked] :as result} (build ctx v nil)]
     (-> ctx
-        (assoc :facai.result/value (assoc val-acc (cond->> k
+        (assoc :harvest.result/value (assoc val-acc (cond->> k
                                                     (factory-id v)
-                                                    (handle-hook ctx :facai.hooks/association-key))
+                                                    (handle-hook ctx :harvest.hooks/association-key))
                                           value)
-               :facai.result/linked linked)
-        (handle-hook :facai.hooks/after-build-map-entry))))
+               :harvest.result/linked linked)
+        (handle-hook :harvest.hooks/after-build-map-entry))))
 
 (defn build-template
   "Build a value out of a 'template'. This template is basically a data shape that
@@ -198,19 +198,19 @@
   thunk (the return value gets built), or a plain value (used as is).
 
   Factories contain templates (as well as an id, hooks, traits, etc). What you
-  pass to `facai/build` is also a template."
+  pass to `harvest/build` is also a template."
   [{:as ctx
-    :facai.build/keys [path]} tmpl opts]
+    :harvest.build/keys [path]} tmpl opts]
   (cond
     (map? tmpl)
     (reduce-kv
      (fn [acc k v]
-       (let [{:facai.result/keys [value linked]}
-             (build-map-entry ctx (:facai.result/value acc) k v opts)]
+       (let [{:harvest.result/keys [value linked]}
+             (build-map-entry ctx (:harvest.result/value acc) k v opts)]
          (-> acc
-             (assoc :facai.result/value value)
+             (assoc :harvest.result/value value)
              (merge-linked linked))))
-     (assoc ctx :facai.result/value (if (record? tmpl)
+     (assoc ctx :harvest.result/value (if (record? tmpl)
                                       tmpl
                                       (empty tmpl)))
      tmpl)
@@ -221,20 +221,20 @@
                                tmpl)]
       (assoc
        ctx
-       :facai.result/value (into (empty tmpl) (map :facai.result/value) results)
-       :facai.result/linked (transduce (map :facai.result/linked) merge results)))
+       :harvest.result/value (into (empty tmpl) (map :harvest.result/value) results)
+       :harvest.result/linked (transduce (map :harvest.result/linked) merge results)))
 
     (fn? tmpl)
     (build ctx (tmpl) nil)
 
     :else
-    (assoc ctx :facai.result/value tmpl)))
+    (assoc ctx :harvest.result/value tmpl)))
 
 (defn extract-hooks [ctx opts hooks]
   (reduce
    (fn [ctx h]
      (if-let [f (get opts h)]
-       (assoc ctx (keyword "facai.hooks" (name h)) f)
+       (assoc ctx (keyword "harvest.hooks" (name h)) f)
        ctx))
    ctx
    hooks))
@@ -246,14 +246,14 @@
               rules :rules
               selected-traits :traits}]
   (let [opts (dissoc opts :rules)
-        lvar-store (:facai.build/!lvars ctx (volatile! {}))
-        ctx (assoc ctx :facai.build/input input)
+        lvar-store (:harvest.build/!lvars ctx (volatile! {}))
+        ctx (assoc ctx :harvest.build/input input)
         ctx (cond-> ctx
-              (not (:facai.build/!lvars ctx))
-              (assoc :facai.build/!lvars lvar-store)
+              (not (:harvest.build/!lvars ctx))
+              (assoc :harvest.build/!lvars lvar-store)
 
               rules
-              (assoc :facai.build/rules rules)
+              (assoc :harvest.build/rules rules)
 
               (or (deferred-build? input) (factory? input))
               (push-path (factory-id input))
@@ -278,9 +278,9 @@
               :else
               (build-template ctx input opts))
         ;; hook passed-in as option
-        result (if-let [hook (:facai.hooks/after-build ctx)]
+        result (if-let [hook (:harvest.hooks/after-build ctx)]
                  (hook ctx)
                  ctx)]
     (when (lvar? rule)
-      (vswap! lvar-store assoc rule (:facai.result/value result)))
+      (vswap! lvar-store assoc rule (:harvest.result/value result)))
     result))

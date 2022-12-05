@@ -2,14 +2,14 @@
   "When starting out simply create a single `factories` namespace, you can split
   it up later if it gets too big.
 
-  I'll alias `lambdaisland.facai` to `f` for brevity, you can alias to `facai`
+  I'll alias `lambdaisland.harvest` to `f` for brevity, you can alias to `harvest`
   if you prefer to be a bit more explicit.
   "
-  (:require [lambdaisland.facai :as f]))
+  (:require [lambdaisland.harvest :as h]))
 
 ;; Let's define our first factory. You pass it a template of what your data
 ;; looks like. In this case we simply put a literal map.
-(f/defactory user
+(h/defactory user
   {:user/name   "Lilliam Predovic"
    :user/handle "lilli42"
    :user/email  "lilli42@example.com"})
@@ -17,7 +17,7 @@
 ;; We can generate data from this template by calling the factory as a function,
 ;; which is an alias for calling `f/build-val`
 
-(user) ; or (f/build-val user)
+(user) ; or (h/build-val user)
 ;; => #:user{:name "Lilliam Predovic",
 ;;           :handle "lilli42",
 ;;           :email "lilli42@example.com"}
@@ -33,7 +33,7 @@
 ;; Functions in the template will be called, and the result in turn is treated
 ;; as a factory template.
 
-(f/defactory user
+(h/defactory user
   {:user/name   "Lilliam Predovic"
    :user/handle "lilli42"
    :user/email  #(str "lilli" (rand-int 100) "@example.com")})
@@ -47,9 +47,9 @@
 ;; more dynamic and random. Maybe you want all usernames to be unique, the
 ;; numbered helper can help with that.
 
-(require '[lambdaisland.facai.helpers :as fh])
+(require '[lambdaisland.harvest.helpers :as fh])
 
-(f/defactory user
+(h/defactory user
   {:user/name   "Lilliam Predovic"
    :user/handle (fh/numbered
                  #(str "lilli" %))
@@ -60,14 +60,14 @@
 
 (require '[lambdaisland.faker :refer [fake]])
 
-(f/defactory user
+(h/defactory user
   {:user/name   #(fake [:name :name])
    :user/handle #(fake [:internet :username])
    :user/email  #(fake [:internet :email])})
 
 ;; Factories can have traits, which are merged into the main template on demand.
 
-(f/defactory article
+(h/defactory article
   {:article/title "7 Tip-top Things To Try"
    :article/status :draft}
 
@@ -85,7 +85,7 @@
 
 ;; If you have associations between data, then you simply use the factory as the value. Or if you want to set some specifics with `:with` or `:traits` you can call the factories.
 
-(f/defactory article
+(h/defactory article
   {:article/title "7 Tip-top Things To Try"
    :article/submitter user
    :article/author (user {:with {:user/roles #{"author"}}})})
@@ -123,7 +123,7 @@
 ;; traits, but this can be a useful feature.
 
 
-(f/defactory blog-post
+(h/defactory blog-post
   :inherit article
   {:post/uri-slug "/post"})
 
@@ -140,57 +140,57 @@
 ;;            :roles #{"author"}},
 ;;     :post/uri-slug "/post"}
 
-(let [result    (f/build article)
-      submitter (f/sel1 result :article/submitter)
-      author    (f/sel1 result :article/author)]
-  {:article   (f/value result)
+(let [result    (h/build article)
+      submitter (h/sel1 result :article/submitter)
+      author    (h/sel1 result :article/author)]
+  {:article   (h/value result)
    :submitter submitter
    :author    author})
 
-(let [result (f/build article)]
-  (f/sel result user))
+(let [result (h/build article)]
+  (h/sel result user))
 (article {:rules {[:article/submitter :user/handle] "editosaurus"}})
 
 (set! *print-namespace-maps* false)
 
 
-(f/defactory organization
+(h/defactory organization
   {:name #(str "org" (rand-int 100))})
 
-(f/defactory user
+(h/defactory user
   {:username "jonny"
    :org organization})
 
-(f/defactory department
+(h/defactory department
   {:name "sales"
    :org organization
    :head user})
 
-(f/defactory meeting-room
+(h/defactory meeting-room
   {:org organization
    :room-number "123"
    :department department})
 
-(f/defactory booking
+(h/defactory booking
   {:start-time #(java.util.Date.)
    :booked-by user
    :room meeting-room})
 
 (booking
- {:rules {[organization] (f/unify)}})
+ {:rules {[organization] (h/unify)}})
 
 
-(f/defactory product
+(h/defactory product
   {:sku "123"
    :price 12.99})
 
-(f/defactory product-line-item
+(h/defactory product-line-item
   {:product product
    :quantity 1}
 
   :after-build
   (fn [ctx]
-    (f/update-value
+    (h/update-value
      ctx
      (fn [{:as res :keys [product quantity]}]
        (assoc res :total (* (:price product) quantity))))))

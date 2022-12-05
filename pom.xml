@@ -2,11 +2,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemalocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.lambdaisland</groupId>
-  <artifactId>facai</artifactId>
+  <artifactId>harvest</artifactId>
   <version>0.7.59-alpha</version>
-  <name>facai</name>
+  <name>harvest</name>
   <description>The ultimate factory library</description>
-  <url>https://github.com/lambdaisland/facai</url>
+  <url>https://github.com/lambdaisland/harvest</url>
   <inceptionYear>2022</inceptionYear>
   <organization>
     <name>Lambda Island</name>
@@ -22,9 +22,9 @@
     </license>
   </licenses>
   <scm>
-    <url>https://github.com/lambdaisland/facai</url>
-    <connection>scm:git:git://github.com/lambdaisland/facai.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/lambdaisland/facai.git</developerConnection>
+    <url>https://github.com/lambdaisland/harvest</url>
+    <connection>scm:git:git://github.com/lambdaisland/harvest.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/lambdaisland/harvest.git</developerConnection>
     <tag>b955ecd9d579fc30283eb18d1e9d2a34abd03ce5</tag>
   </scm>
   <dependencies>
