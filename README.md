@@ -1,10 +1,14 @@
-# harvest
+# Harvest
 
 <!-- badges -->
 [![cljdoc badge](https://cljdoc.org/badge/com.lambdaisland/harvest)](https://cljdoc.org/d/com.lambdaisland/harvest) [![Clojars Project](https://img.shields.io/clojars/v/com.lambdaisland/harvest.svg)](https://clojars.org/com.lambdaisland/harvest)
 <!-- /badges -->
 
-Factories for fun and profit! Gongxi harvest!
+Sow factories and reap data for unit testing, UI testing, demos, devcards, or
+notebooks.
+
+Harvest is the successor to [Facai](https://github.com/lambdaisland/facai), with
+a friendlier name, and a more intuitive API (coming soon).
 
 ## Getting Started
 
