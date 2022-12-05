@@ -78,18 +78,16 @@ looks like.
    :user/handle "lilli42"
    :user/email  "lilli42@example.com"})
 
-;; We can generate data from this template by calling the factory as a function,
-;; which is an alias for calling `f/build-val`
+;; We can generate data from this template by calling `f/build-val`
 
-(user) ; or (f/build-val user)
+(f/build-val user)
 ;; => #:user{:name "Lilliam Predovic",
 ;;           :handle "lilli42",
 ;;           :email "lilli42@example.com"}
 
-;; It can take a few options, use `:with` to override or supply additional
-;; values.
+;; To override additional values you can pass a map to the factory:
 
-(user {:with {:user/name "Mellissa Schimmel"}})
+(f/build-val (user {:user/name "Mellissa Schimmel"}))
 ;; => #:user{:name "Mellissa Schimmel",
 ;;           :handle "lilli42",
 ;;           :email "lilli42@example.com"}
@@ -102,7 +100,7 @@ looks like.
    :user/handle "lilli42"
    :user/email  #(str "lilli" (rand-int 100) "@example.com")})
 
-(user)
+(f/build-val user)
 ;; => #:user{:name "Lilliam Predovic",
 ;;           :handle "lilli42",
 ;;           :email "lilli92@example.com"}
@@ -135,13 +133,12 @@ looks like.
    :article/status :draft}
 
   :traits
-  {:with
-   {:published {:article/status "published"}
-    :unpublished {:article/status "unpublished"}
-    :in-the-future {:article/published-at #(fh/days-from-now 2)}
-    :in-the-past {:article/published-at #(fh/days-ago 2)}}})
+  {:published {:with {:article/status "published"}}
+   :unpublished {:with {:article/status "unpublished"}}
+   :in-the-future {:with {:article/published-at #(fh/days-from-now 2)}}
+   :in-the-past {:with {:article/published-at #(fh/days-ago 2)}}})
 
-(article {:traits [:published :in-the-future]})
+(f/build-val article {:traits [:published :in-the-future]})
 ;; => #:article{:title "7 Tip-top Things To Try",
 ;;              :status "published",
 ;;              :published-at
@@ -155,7 +152,7 @@ looks like.
    :article/submitter user
    :article/author (user {:with {:user/roles #{"author"}}})})
 
-(article)
+(f/build-val article)
 ;; => #:article{:title "7 Tip-top Things To Try",
 ;;              :submitter
 ;;              #:user{:name "Mr. Reinaldo Hartmann",
@@ -172,7 +169,7 @@ looks like.
 ;; will only get expanded when building the `article`, so you get a different
 ;; username each time.
 
-(article)
+(f/build-val article)
 ;; => #:article{:title "7 Tip-top Things To Try",
 ;;              :submitter
 ;;              #:user{:name "Hobert Fadel",
@@ -192,7 +189,7 @@ looks like.
   :inherit article
   {:post/uri-slug "/post"})
 
-(blog-post)
+(f/build-val blog-post)
 ;; => {:article/title "7 Tip-top Things To Try",
 ;;     :article/submitter
 ;;     #:user{:name "Rima Wintheiser",
@@ -205,6 +202,50 @@ looks like.
 ;;            :roles #{"author"}},
 ;;     :post/uri-slug "/post"}
 ```
+
+## Deferred factory generation
+
+When calling a factory as a function, rather than actually generating data, we
+simply return a value that keeps track of the factory you called, and the
+options you passed. Actual instantiation only happens when you call
+`f/build-val`.
+
+This provides a concise way to specify overrides, either when creating
+factories, or when building values.
+
+```clj
+(f/defactory article
+ {:article/submitter (user {:user/name "Mr. submit"})})
+ 
+;; or
+
+(f/build-val article {:with {:article/submitter {:user/name "Mr. submit"}}})
+
+;; or
+
+(f/build-val (article {:article/submitter {:user/name "Mr. submit"}}))
+```
+
+The syntax works as follows. `f/build-val` takes two arguments, a factory or
+template, and a map of options: `:with`, `:rules`, `:traits`.
+
+Calling a factory with *keyword arguments* (key value pairs) is equivalent to
+passing these options in to `f/build-val`.
+
+When passing a single map instead of keyword args this is equivalent to using
+`:with`.
+
+```clj
+(f/build-val user {:with {:user/name "jill"}})
+;; equals
+(user :with {:user/name "jill"}
+;; equals
+(user {:user/name "jill"}
+```
+
+This provides a concise syntax for the most common case: overriding values,
+while still allowing us to distinguish explicit options like `:rules` and
+`:traits`.
 
 ## Paths, Selectors, Rules, and Unification
 
@@ -361,9 +402,9 @@ which is a shorthand for `(update ctx :facai.result/value ...)`
      (fn [{:as res :keys [product quantity]}]
        (assoc res :total (* (:price product) quantity))))))
 
-(product-line-item);; => {:product {:sku "123", :price 12.99}, :quantity 1, :total 12.99}
-(product-line-item {:with {:quantity 2}});; => {:product {:sku "123", :price 12.99}, :quantity 2, :total 25.98}
-(product-line-item {:rules {:price 69 :quantity 2}});; => {:product {:sku "123", :price 69}, :quantity 2, :total 138}
+(f/build-val product-line-item);; => {:product {:sku "123", :price 12.99}, :quantity 1, :total 12.99}
+(f/build-val product-line-item {:with {:quantity 2}});; => {:product {:sku "123", :price 12.99}, :quantity 2, :total 25.98}
+(f/build-val product-line-item {:rules {:price 69 :quantity 2}});; => {:product {:sku "123", :price 69}, :quantity 2, :total 138}
 ```
 
 Notice how the result always has the right total price.
