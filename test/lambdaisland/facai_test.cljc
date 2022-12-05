@@ -7,15 +7,11 @@
   {:name "Arne"})
 
 (deftest basic-attributes
-  (testing "factories are themselves callable"
-    (is (= {:name "Arne"} (user))))
   (testing "factories can be built explicitly"
     (is (= {:name "Arne"} (f/build-val user))))
   (testing "overriding attributes"
-    (is (= {:name "John"} (user {:with {:name "John"}})))
     (is (= {:name "John"} (f/build-val user {:with {:name "John"}}))))
   (testing "additional attributes"
-    (is (= {:name "Arne" :age 39} (user {:with {:age 39}})))
     (is (= {:name "Arne" :age 39} (f/build-val user {:with {:age 39}})))))
 
 (f/defactory post
@@ -35,13 +31,13 @@
     (is (fk/deferred-build? (get-in post2 [:facai.factory/template :author]))))
 
   (is (= {:title "Things To Do", :author {:name "Tobi"}}
-         (post)))
+         (f/build-val post)))
 
   (is (= {:title "Things To Do", :author {:name "Arne", :admin? true}}
-         (post {:with {:author admin}}))))
+         (f/build-val post {:with {:author admin}}))))
 
 (deftest inheritance
-  (is (= {:name "Arne", :admin? true} (admin))))
+  (is (= {:name "Arne", :admin? true} (f/build-val admin))))
 
 (f/defactory line-item
   {:description "widget"
@@ -55,14 +51,14 @@
 
 (deftest traits
   (is (= {:description "widget", :quantity 1, :price 0.99, :discount "5%"}
-         (line-item {:traits [:discounted]}))))
+         (f/build-val line-item :traits [:discounted]))))
 
 (f/defactory dice-roll
   {:dice-type (constantly 6)
    :number-of-dice (constantly 2)})
 
 (deftest evaluate-functions
-  (is (= {:dice-type 6 :number-of-dice 2} (dice-roll))))
+  (is (= {:dice-type 6 :number-of-dice 2} (f/build-val dice-roll))))
 
 (deftest selector-test
   (let [res (f/build post)]
@@ -83,16 +79,16 @@
     (f/update-result ctx update :bar #(- %))))
 
 (deftest multiple-hooks-test
-  (is (= {:bar -1} (multiple-hooks)))
+  (is (= {:bar -1} (f/build-val multiple-hooks)))
 
   (testing "hook is applied after :with overrides"
-    (is (= {:bar -5} (multiple-hooks {:with {:bar 5}}))))
+    (is (= {:bar -5} (f/build-val multiple-hooks {:with {:bar 5}}))))
 
   (testing "trait provides both override and hook, order is override > trait hook > top-level hook"
-    (is (= {:bar -3} (multiple-hooks {:traits [:some-trait]}))))
+    (is (= {:bar -3} (f/build-val multiple-hooks {:traits [:some-trait]}))))
 
   (testing "trait and option override, trait override is ignored but hooks fire in right order and see override value"
-    (is (= {:bar -10} (multiple-hooks {:with {:bar 9} :traits [:some-trait]})))))
+    (is (= {:bar -10} (f/build-val multiple-hooks {:with {:bar 9} :traits [:some-trait]})))))
 
 (f/defactory product
   {:sku "123"
@@ -118,15 +114,15 @@
   (is (= {:product {:sku "123" :price 7.5}
           :quantity 3
           :total 22.5}
-         (product-line-item {:rules {:quantity 3
-                                     :price 7.5}})))
+         (f/build-val product-line-item {:rules {:quantity 3
+                                                 :price 7.5}})))
 
   (is (= {:product {:sku "XYZ", :price 0.99}, :quantity 1, :total 0.99}
-         (product-line-item {:traits [:balloon]
-                             :rules {:sku "XYZ"}})))
+         (f/build-val product-line-item {:traits [:balloon]
+                                         :rules {:sku "XYZ"}})))
 
   (is (= {:product {:price 1}, :quantity 1, :total 1}
-         (product-line-item {:rules {:product {:price 1}}}))))
+         (f/build-val product-line-item {:rules {:product {:price 1}}}))))
 
 (f/defactory f-a
   {:a #(rand-int 100)})

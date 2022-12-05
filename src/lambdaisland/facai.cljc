@@ -18,7 +18,7 @@
       (clojure.lang.IFn
        (applyTo [this xs] (clojure.lang.AFn/applyToHelper this xs))
        (invoke [this] this)
-       (invoke [this opts] (fk/defer this {:with opts}))
+       (invoke [this opts] (fk/defer this opts))
        (invoke [this k v] (fk/defer this {k v}))
        (invoke [this ka va kb vb] (fk/defer this {ka va kb vb}))
        (invoke [this ka va kb vb kc vc] (fk/defer this {ka va kb vb kc vc}))
@@ -30,7 +30,7 @@
       :cljs
       (cljs.core/IFn
        (-invoke [this] this)
-       (-invoke [this opts] (fk/defer this {:with opts}))
+       (-invoke [this opts] (fk/defer this opts))
        (-invoke [this k v] (fk/defer this {k v}))
        (-invoke [this ka va kb vb] (fk/defer this {ka va kb vb}))
        (-invoke [this ka va kb vb kc vc] (fk/defer this {ka va kb vb kc vc}))
@@ -95,7 +95,7 @@
   `:facai.result/value` and `:facai.result/linked`."
   ([factory]
    (build factory nil))
-  ([factory opts]
+  ([factory & {:as opts}]
    (fk/build nil factory opts)))
 
 (defn build-val
@@ -103,7 +103,7 @@
   linked entities."
   ([factory]
    (build-val factory nil))
-  ([factory opts]
+  ([factory & {:as opts}]
    (if-let [thunk (and fk/*defer-build?* (:facai.factory/resolve factory))]
      (fk/defer thunk opts)
      (:facai.result/value (fk/build nil factory opts)))))
