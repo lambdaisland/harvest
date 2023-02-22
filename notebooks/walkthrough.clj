@@ -6,9 +6,9 @@
 
 ;; # 🧧 Factories for Fun and Profit. 恭喜發財
 
-;; Harvest (rhymes with "high") is a factory library for Clojure and ClojureScript,
-;; inspired by the likes of Factory Bot (Ruby) and Ex Machina (Elixir), but with
-;; some unique features that set it apart. In this walkthrough we'll build up your
+;; Harvest is a factory library for Clojure and ClojureScript, inspired by the
+;; likes of Factory Bot (Ruby) and Ex Machina (Elixir), but with some unique
+;; features that set it apart. In this walkthrough we'll build up your
 ;; understanding from bottom to top.
 
 ;; The main entry point when using Harvest is the [[lambdaisland.harvest/build]]
