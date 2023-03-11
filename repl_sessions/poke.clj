@@ -1,6 +1,6 @@
 (ns repl-sessions.poke
-  (:require [lambdaisland.harvest :as h]
-            [lambdaisland.harvest.kernel :as hk]
+  (:require [lambdaisland.facai :as f]
+            [lambdaisland.facai.kernel :as fk]
             [clojure.string :as str]))
 
 (def short-words
@@ -12,110 +12,78 @@
                   (shuffle (concat (map str/upper-case short-words)
                                    short-words)))))
 
-(h/defactory cycle
+(f/defactory cycle
   {:type :cycle
    :id rand-id})
 
-(h/defactory user
+(f/defactory user
   {:type :user
    :id rand-id
    :name "Finn"})
 
-(h/defactory organization
+(f/defactory organization
   {:type :organization
    :id rand-id})
 
-(h/defactory organization-user
+(f/defactory organization-user
   {:type :organization-user
    :id rand-id
    :organization-id organization
    :user-id user})
 
-(h/defactory property
+(f/defactory property
   {:type :property
    :id rand-id
    :org-id organization
    :created-by user})
 
-(h/defactory property-cycle-user
+(f/defactory property-cycle-user
   {:type :property-cycle-user
    :id rand-id
    :cycle-id cycle
    :property-id property
    :user-id user})
 
-(defrecord LVar [identity])
+(f/build-val property-cycle-user)
 
-(property-cycle-user
- {:rules {[:created-by] (->LVar :user)
-          [:user-id] (->LVar :user)
-          [:org-id] (->LVar :org)
-          [:organization-id] (->LVar :org)}})
+;; This is a factory
+property-cycle-user
 
-(h/sel
- (h/build property-cycle-user)
- [:created-by])
+;; This is a "thunk", but conceptually it's also a factory
+(property-cycle-user :with {:id "123"})
 
-(h/sel
- (h/build property-cycle-user)
- [#{:user-id :created-by}])
+;; both of these can be built
+(f/build-val property-cycle-user)
 
-(h/sel
- (h/build property-cycle-user)
- [user])
-(keys
- (:harvest.result/linked
-  (h/build property-cycle-user)))
+;; This is a "thunk", but conceptually it's also a factory
+(f/build-val (property-cycle-user :with {:id "123"}))
 
-(h/build property-cycle-user
-         {:rules {[user :name] cycle
-                  [property] user}})
+;; But the options can also be passed to build-val... or rather, the former
+;; syntax is a way of bundling specific "build-val" options with the factory
+(f/build-val property-cycle-user :with {:id "123"})
 
-(some #(when (hk/path-match? '[repl-sessions.poke/property-cycle-user :user-id repl-sessions.poke/user :name] (key %)) (val %)) {[user :name] "Jake"
-                                                                                                                                 [property] {:foo "bar"}})
+;; Besides building a single value (the simplest case), we can build a
+;; resultset, which contains info about all the linked objects, and which can be
+;; queried with selectors.
+(f/build property-cycle-user)
+(let [res (f/build property-cycle-user)
+      cycle (f/sel1 res cycle)
+      user (f/sel1 res user)
+      property (f/sel1 res property)]
+  [cycle user property])
 
+;; This used to simply return a value, but now it doesn't, the reason is that we
+;; want to be able to use these within factory definitions, or when specifying
+;; overrides
+(property-cycle-user :with {:id "123"})
 
-(def kk2
-  (keys
-   (:harvest.result/linked
-    (h/build property-cycle-user
-             #_{:rules {[user] (hk/->LVar :x)}}))))
+(f/build-val
+ property-cycle-user
+ :with {:id "123"
+        :user (user :with {:name "Timmy"})})
 
-(count kk2)
-
-(remove (set kk) kk2)
-
-(h/build-val [property-cycle-user
-              organization-user]
-             {:rules {[#{:org-id :organization-id}] (hk/->LVar :x)}})
-
-
-(h/build-val [property-cycle-user
-              organization-user]
-             {:rules {[organization] (hk/->LVar :x)}})
-
-
-(hk/path-match? `[0 repl-sessions.poke/property-cycle-user :property-id repl-sessions.poke/property :org-id repl-sessions.poke/organization]
-                [#{:org-id :organization-id}])
-
-(h/defactory a
-  {:a #(rand-int 100)})
-
-(h/defactory b
-  {:a1 a
-   :a2 a
-   :b "b"})
-
-(h/defactory c
-  {:b1 b
-   :b2 b
-   :c "c"})
-
-(keys (:harvest.result/linked (h/build c {:rules {a (h/unify)}})))
-([repl-sessions.poke/c :b1 repl-sessions.poke/b :a1 repl-sessions.poke/a]
- [repl-sessions.poke/c :b1 repl-sessions.poke/b :a2 repl-sessions.poke/a]
- [repl-sessions.poke/c :b1 repl-sessions.poke/b]
- [repl-sessions.poke/c :b2 repl-sessions.poke/b :a1 repl-sessions.poke/a]
- [repl-sessions.poke/c :b2 repl-sessions.poke/b :a2 repl-sessions.poke/a]
- [repl-sessions.poke/c :b2 repl-sessions.poke/b]
- [repl-sessions.poke/c])
+(-> property-cycle-user
+    (f/with :user (f/with user :name "Timmy"))
+    (f/rule [user :name] "Timmy")
+    (f/sel [user [:* property] cycle])
+    deref)

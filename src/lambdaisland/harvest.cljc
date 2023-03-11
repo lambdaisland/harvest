@@ -68,10 +68,11 @@
   are namespaced to `harvest.factory`."
      [fact-name & args]
      `(def ~fact-name
-        (binding [hk/*defer-build?* true]
-          (factory :id '~(macro-util/qualify-sym &env fact-name)
-                   :resolve #(do ~fact-name)
-                   ~@args)))))
+        (factory :id '~(macro-util/qualify-sym &env fact-name)
+                 ~@(if (:ns &env)
+                     [:thunk `(fn [] ~fact-name)]
+                     [:var `(var ~fact-name)])
+                 ~@args))))
 
 (defn with [factory opts]
   (hk/defer factory {:with opts}))
@@ -117,9 +118,7 @@
   "Build the given factory or template. Returns a sequence of all entities that were built."
   ([factory]
    (build-all factory nil))
-  ([factory rules]
-   (build-all factory rules nil))
-  ([factory rules opts]
+  ([factory opts]
    (all (hk/build nil factory opts))))
 
 (defn value
